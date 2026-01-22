@@ -1,3 +1,96 @@
+import { NextFunction, Request, Response } from "express";
+
+export type ControllerFunction = (req: Request, res: Response, next: NextFunction) => Promise<void>;
+
+export type ModelFunction<INPUT, OUTPUT> = (input: INPUT) => Promise<OUTPUT>;
+
+export interface Controller {
+    getMany?: ControllerFunction;
+    getOne?: ControllerFunction;
+    create?: ControllerFunction;
+    update?: ControllerFunction;
+    delete?: ControllerFunction;
+}
+
+export interface WazeRouteModel {
+    getMany?: ModelFunction<{
+        token?: string;
+        dates?: [Date, Date];
+        positions?: [Position | undefined, Position | undefined];
+    }, WazeRouteGroup>;
+    getOne?: ModelFunction<{
+        id: number;
+    }, WazeRoute>;
+}
+
+export interface AlertModel {
+    getMany?: ModelFunction<{
+        token?: string;
+        dates?: [Date, Date];
+        positions?: [Position | undefined, Position | undefined];
+        state?: string;
+        city?: string;
+        type?: string;
+        subtype?: string;
+        kms?: [number | undefined, number | undefined];
+        fines?: [number | undefined, number | undefined];
+        sector?: string;
+        tribunal?: string;
+        completeReport?: boolean;
+        trafficIncident?: boolean;
+        reliabilities?: [number | undefined, number | undefined];
+        lengths?: [number | undefined, number | undefined];
+        delays?: [number | undefined, number | undefined];
+        dir?: string;
+    }, AlertGroup>;
+    getOne?: ModelFunction<{
+        id: number;
+    }, Alert>;
+}
+
+export interface SpeedModel {
+    getMany?: ModelFunction<{
+        token?: string;
+        dates?: [Date, Date];
+        positions?: [Position | undefined, Position | undefined];
+        speeds?: [number | undefined, number | undefined];
+        fixes?: [number | undefined, number | undefined];
+        precisions?: [number | undefined, number | undefined];
+        state?: string;
+        city?: string;
+        folder?: string;
+        route?: string;
+        vehicleType?: string;
+        vehiclePlate?: string;
+        direction?: number;
+        dop?: [number | undefined, number | undefined];
+        dir?: string;
+    }, SpeedGroup>;
+    getOne?: ModelFunction<{
+        id: number;
+    }, Speed>;
+}
+
+export interface CameraModel {
+    getMany?: ModelFunction<{
+        token?: string;
+        integrations?: [Date | undefined, Date | undefined];
+        positions?: [Position | undefined, Position | undefined];
+        state?: string;
+        city?: string;
+        online?: boolean;
+        link?: string;
+        provider?: string;
+        model?: string;
+        brand?: string;
+        encoderModel?: string;
+        encoderBrand?: string;
+    }, CameraGroup>;
+    getOne?: ModelFunction<{
+        id: number;
+    }, Camera>;
+}
+
 export interface IdName {
     id: number;
     name?: string;
