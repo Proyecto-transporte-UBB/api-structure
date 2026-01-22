@@ -1,21 +1,21 @@
 import { CatStats, Stats } from "../types";
 
-const mean = <T,>(...values: T[]) => {
-    const sum = values.reduce((acc, val) => acc + (val as unknown as number), 0);
-    return (sum / values.length) as unknown as T;
+const mean = <T,>(...values: (T | null | undefined)[]) => {
+    const sum = (values.filter(v => v !== null && v !== undefined) as T[]).reduce((acc, val) => acc + (val as unknown as number), 0);
+    return (sum / (values.filter(v => v !== null && v !== undefined) as T[]).length) as unknown as T;
 }
 
-const median = <T,>(...values: T[]) => {
-    const sorted = [...values].sort((a, b) => (a as unknown as number) - (b as unknown as number));
+const median = <T,>(...values: (T | null | undefined)[]) => {
+    const sorted = [...values.filter(v => v !== null && v !== undefined) as T[]].sort((a, b) => (a as unknown as number) - (b as unknown as number));
     const mid = Math.floor(sorted.length / 2);
     return (sorted.length % 2 !== 0)
         ? sorted[mid]
         : (((sorted[mid - 1] as unknown as number) + (sorted[mid] as unknown as number)) / 2) as unknown as T;
 }
 
-const stdDev = <T,>(...values: T[]) => {
+const stdDev = <T,>(...values: (T | null | undefined)[]) => {
     const avg = mean(...values) as unknown as number;
-    const squareDiffs = values.map(val => {
+    const squareDiffs = (values.filter(v => v !== null && v !== undefined) as T[]).map(val => {
         const diff = (val as unknown as number) - avg;
         return diff * diff;
     });
@@ -23,19 +23,19 @@ const stdDev = <T,>(...values: T[]) => {
     return Math.sqrt(avgSquareDiff) as unknown as T;
 }
 
-const logFunction = <T,>(fn: (...values: T[]) => T) => (...values: T[]) => Math.exp(fn(...values.map(val => Math.log((val as unknown as number) + 1)) as unknown as T[]) as unknown as number) - 1 as unknown as T;
+const logFunction = <T,>(fn: (...values: (T | null | undefined)[]) => T) => (...values: (T | null | undefined)[]) => Math.exp(fn(...values.map(val => Math.log((val as unknown as number) + 1)) as unknown as T[]) as unknown as number) - 1 as unknown as T;
 
-const logMean = <T,>(...values: T[]) => logFunction(mean)(...values);
+const logMean = <T,>(...values: (T | null | undefined)[]) => logFunction(mean)(...values);
 
-const logStdDev = <T,>(...values: T[]) => logFunction(stdDev)(...values);
+const logStdDev = <T,>(...values: (T | null | undefined)[]) => logFunction(stdDev)(...values);
 
 export const computeStats = <T,>(...values: (T | null | undefined)[]): Stats<T> => ({
     count: values.length,
     mean: mean(...(values.filter(v => v !== null && v !== undefined) as T[])),
-    logMean: logMean(...(values.filter(v => v !== null && v !== undefined) as T[])),
-    median: median(...(values.filter(v => v !== null && v !== undefined) as T[])),
-    stdDev: stdDev(...(values.filter(v => v !== null && v !== undefined) as T[])),
-    logStdDev: logStdDev(...(values.filter(v => v !== null && v !== undefined) as T[])),
+    logMean: logMean(...values),
+    median: median(...values),
+    stdDev: stdDev(...values),
+    logStdDev: logStdDev(...values),
     min: Math.min(...(values.filter(v => v !== null && v !== undefined) as T[] as unknown as number[])) as unknown as T,
     max: Math.max(...(values.filter(v => v !== null && v !== undefined) as T[] as unknown as number[])) as unknown as T,
     NAs: values.filter(v => v === null || v === undefined).length,
