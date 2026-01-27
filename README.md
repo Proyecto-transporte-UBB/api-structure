@@ -7,14 +7,36 @@ output:
     keep_tex: true
 ---
 
+# Introducción
+
+Este documento describe la estructura de la base de datos y los endpoints de la API desarrollada para la gestión y consulta de datos de movilidad urbana, incluyendo accidentes, alertas de tráfico, mediciones de velocidad, rutas y cámaras de vigilancia.
+
 # Tablas de la Base de Datos
 
-A continuación se muestran las diferentes tablas de la Base de Datos, donde se indican:
-
-- Fuentes: Tablas de donde se obtendrían los datos
-- Columnas: Nombre y tipo de dato
+A continuación se presentan las tablas que componen la base de datos, indicando sus fuentes de datos y las columnas que las integran.
 
 El Modelo Entidad Relación se encuentra en los [anexos](#modelo-entidad-relación).
+
+## source
+
+**Fuente(s)**:
+
+- Siniestros buses interurbanos(1).xlsx
+- GH026929.xlsx
+- DTPR
+- Data accidentes de carabineros.xlsx
+- Incidentes de tráfico radio.xlsx
+- Med velo CHIGUAYANTE.xlsx
+- Med velo LA VEGA.xlsx
+- Alertas de Tráfico.csv
+- Copia de Accidentes.csv
+- Waze for Cities Data Key Alerts Dashboard_Traffic Irregularities_Tabla(1).csv
+- Red de Waze
+
+**Columnas**:
+
+- `id`: `INTEGER`, `PRIMARY KEY`, `AUTOINCREMENT`
+- `name`: `VARCHAR(255)`
 
 ## state
 
@@ -167,6 +189,7 @@ El Modelo Entidad Relación se encuentra en los [anexos](#modelo-entidad-relaci�
 **Columnas**:
 
 - `id`: `INTEGER`, `PRIMARY KEY`, `AUTOINCREMENT`
+- `src_id`: `INTEGER`, `FOREIGN KEY` (`id` - [source](#source))
 - `date`: `DATETIME`
 - `historic_time`: `FLOAT`
 - `from_id`: `INTEGER`, `FOREIGN KEY` (`id` - [street](#street))
@@ -206,6 +229,7 @@ El Modelo Entidad Relación se encuentra en los [anexos](#modelo-entidad-relaci�
 **Columnas**:
 
 - `id`: `INTEGER`, `PRIMARY KEY`, `AUTOINCREMENT`
+- `src_id`: `INTEGER`, `FOREIGN KEY` (`id` - [source](#source))
 - `date`: `DATETIME`
 - `city_id`: `INTEGER`, `FOREIGN KEY` (`id` - [city](#city))
 - `subtype_id`: `INTEGER`, `FOREIGN KEY` (`id` - [alert_subtype](#alert_subtype))
@@ -339,6 +363,7 @@ El Modelo Entidad Relación se encuentra en los [anexos](#modelo-entidad-relaci�
 **Columnas**:
 
 - `id`: `INTEGER`, `PRIMARY KEY`, `AUTOINCREMENT`
+- `src_id`: `INTEGER`, `FOREIGN KEY` (`id` - [source](#source))
 - `date`: `DATETIME`
 - `latitude`: `FLOAT`
 - `longitude`: `FLOAT`
@@ -407,6 +432,7 @@ El Modelo Entidad Relación se encuentra en los [anexos](#modelo-entidad-relaci�
 **Columnas**:
 
 - `id`: `INTEGER`, `PRIMARY KEY`, `AUTOINCREMENT`
+- `src_id`: `INTEGER`, `FOREIGN KEY` (`id` - [source](#source))
 - `name`: `VARCHAR(50)`
 - `city_id`: `INTEGER`, `FOREIGN KEY` (`id` - [city](#city))
 - `integration`: `DATETIME`
@@ -422,200 +448,153 @@ El Modelo Entidad Relación se encuentra en los [anexos](#modelo-entidad-relaci�
 
 # Endpoints de la API
 
-A continucación, se muestran los diferentes endpoints que podría tener la API, la estructura está en los [anexos](#estructura-de-la-api)
+La API está organizada en cuatro recursos principales: rutas, alertas, velocidades y cámaras. Cada recurso soporta consultas con filtros avanzados y devuelve datos estructurados en formato JSON.
 
-## `USE /route`
+[Anexos](#estructura-de-la-api)
 
-### `GET /`
+## `GET /api/data/route`
 
-Obtener un conjunto de rutas de Waze
+**Descripción**: Obtiene un conjunto de rutas de Waze.
 
-**Queries**:
+**Parámetros de consulta**:
 
-- `?token`: Token
-- `?min_date`: Fecha mínima (por defecto = Ahora - 1 día)
-- `?max_date`: Fecha máxima (por defecto = Ahora)
-- `?min_lat`: Latitud mínima
-- `?max_lat`: Latitud máxima
-- `?min_lng`: Longitud mínima
-- `?max_lng`: Longitud máxima
+- `token` (requerido)
+- `src` (fuente)
+- `min_date`, `max_date` (rango temporal)
+- `min_lat`, `max_lat`, `min_lng`, `max_lng` (rango geográfico)
+- `disc_spc`, `disc_temp` (discretización espacial y temporal en metros y segundos)
 
-**Response**:
+**Respuesta**: Objeto [`WazeRouteGroup`](#tipos-de-typescript).
 
-- [`WazeRouteGroup`](#tipos-de-typescript)
+## `GET /api/data/route/:id`
 
-### `GET /:id`
+**Descripción**: Obtiene una ruta específica por ID.
 
-Obtener una ruta de Waze en específico
+**Parámetros de consulta**:
 
-**Queries**:
+- `token` (requerido)
 
-- `?token`: Token
+**Parámetros de URL**:
 
-**Params**:
+- `id`: ID de la ruta de waze
 
-- `/:id`: ID de la ruta de waze
+**Respuesta**: Objeto [`WazeRoute`](#tipos-de-typescript) individual.
 
-**Response**:
+## `GET /api/data/alert`
 
-- [`WazeRoute`](#tipos-de-typescript)
+**Descripción**: Consulta alertas y accidentes con múltiples filtros.
 
-## `USE /alert`
+**Parámetros de consulta**:
 
-### `GET /`
+- `token` (requerido)
+- `src` (fuente)
+- `min_date`, `max_date` (rango temporal)
+- `min_lat`, `max_lat`, `min_lng`, `max_lng` (rango geográfico)
+- `disc_spc`, `disc_temp` (discretización espacial y temporal en metros y segundos)
+- `state`, `city` (comuna y región)
+- `type`, `subtype` (clasificación de alerta/accidente)
+- `min_km`, `max_km` (rango de kilómetros)
+- `min_fine`, `max_fine` (rango de partes)
+- `sector` (sector)
+- `tribunal` (tribunal)
+- `complete_report` (`0`: no es un reporte completo; `1`: es un reporte completo)
+- `traffic_incident` (`0`: no es accidente de tráfico; `1`: es accidente de tráfico)
+- `min_rel`, `max_rel` (rango de confiabilidades)
+- `min_len`, `max_len` (rango de largos)
+- `min_del`, `max_del` (rango de desfases)
+- `dir` (dirección: `N-S`, `S-N`, etc)
 
-Obtener un conjunto de alertas o accidentes
+**Respuesta**: Objeto [`AlertGroup`](#tipos-de-typescript).
 
-**Queries**:
+## `GET /api/data/alert/:id`
 
-- `?token`: Token
-- `?min_date`: Fecha mínima (por defecto = Ahora - 1 día)
-- `?max_date`: Fecha máxima (por defecto = Ahora)
-- `?min_lat`: Latitud mínima
-- `?max_lat`: Latitud máxima
-- `?min_lng`: Longitud mínima
-- `?max_lng`: Longitud máxima
-- `?state`: Región
-- `?city`: Ciudad
-- `?type`: Tipo de alerta/accidente
-- `?subtype`: Subtipo de alerta/accidente
-- `?min_km`: Kilómetro mínimo
-- `?max_km`: Kilómetro máximo
-- `?min_fine`: Parte mínimo
-- `?max_fine`: Parte máximo
-- `?sector`: Sector
-- `?tribunal`: Tribunal
-- `?complete_report`: Reporte Completo (`0` o `1`)
-- `?traffic_incident`: Accidente de tráfico (`0` o `1`)
-- `?min_rel`: Confiabilidad Mínima (entre `5` y `10`)
-- `?max_rel`: Confiabilidad Máxima (entre `5` y `10`)
-- `?min_len`: Largo mínimo
-- `?max_len`: Largo máximo
-- `?min_del`: Desfase mínimo
-- `?max_del`: Desfase máximo
-- `?dir`: Dirección (`N-S`, `S-N`, etc)
+**Descripción**: Obtiene una alerta específica por ID.
 
-**Response**:
+**Parámetros de consulta**:
 
-- [`AlertGroup`](#tipos-de-typescript)
+- `token` (requerido)
 
-### `GET /:id`
+**Parámetros de URL**:
 
-Obtener una alerta o accidente en específico
+- `id`: ID de la alerta o accidente
 
-**Queries**:
+**Respuesta**: Objeto [`Alert`](#tipos-de-typescript) individual.
 
-- `?token`: Token
+## `GET /api/data/speed`
 
-**Params**:
+**Descripción**: Consulta medidas de velocidad con múltiples filtros.
 
-- `/:id`: ID de la alerta o accidente
+**Parámetros de consulta**:
 
-**Response**:
+- `token` (requerido)
+- `src` (fuente)
+- `min_date`, `max_date` (rango temporal)
+- `min_lat`, `max_lat`, `min_lng`, `max_lng` (rango geográfico)
+- `disc_spc`, `disc_temp` (discretización espacial y temporal en metros y segundos)
+- `min_spd`, `max_spd` (rango de velocidades)
+- `min_fix`, `max_fix` (rango de fixes)
+- `min_pres`, `max_pres` (rango de presiciones)
+- `state`, `city` (comuna y región)
+- `folder`, `route` (carpeta y recorrido)
+- `vh_type`, `plate` (tipo y patente del vehículo)
+- `direction` (dirección: `-1`, `0` o `1`)
+- `min_dop`, `max_dop`: (rango de presiones geométricas)
 
-- [`Alert`](#tipos-de-typescript)
+**Respuesta**: Objeto [`SpeedGroup`](#tipos-de-typescript).
 
-## `USE /speed`
+## `GET /api/data/speed/:id`
 
-### `GET /`
+**Descripción**: Obtiene una medida específica por ID.
 
-Obtener un conjunto de medidas de velocidad
+**Parámetros de consulta**:
 
-**Queries**:
+- `token` (requerido)
 
-- `?token`: Token
-- `?min_date`: Fecha mínima (por defecto = Ahora - 1 día)
-- `?max_date`: Fecha máxima (por defecto = Ahora)
-- `?min_lat`: Latitud mínima
-- `?max_lat`: Latitud máxima
-- `?min_lng`: Longitud mínima
-- `?max_lng`: Longitud máxima
-- `?min_spd`: Velocidad mínima
-- `?max_spd`: Velocidad máxima
-- `?min_fix`: Fix mínimo
-- `?max_fix`: Fix máximo
-- `?min_pres`: Presición mínima
-- `?max_pres`: Presición máxima
-- `?state`: Región
-- `?city`: Ciudad
-- `?folder`: Carpeta de la ruta
-- `?route`: Ruta
-- `?vh_type`: Tipo de vehículo
-- `?plate`: Patente del vehículo
-- `?direction`: Dirección (`-1`, `0` o `1`)
-- `?min_dop`: Presión geométrica mínima
-- `?max_dop`: Presión geométrica máxima
+**Parámetros de URL**:
 
-**Response**:
+- `id`: ID de la medida
 
-- [`SpeedGroup`](#tipos-de-typescript)
+**Respuesta**: Objeto [`Speed`](#tipos-de-typescript) individual.
 
-### `GET /:id`
+## `GET /api/data/camera`
 
-Obtener una medida en específico
+**Descripción**: Consulta cámaras con múltiples filtros.
 
-**Queries**:
+**Parámetros de consulta**:
 
-- `?token`: Token
+- `token` (requerido)
+- `src` (fuente)
+- `min_int`, `max_int` (fechas de integración)
+- `min_lat`, `max_lat`, `min_lng`, `max_lng` (rango geográfico)
+- `state`, `city` (comuna y región)
+- `online` (`0`: la cámara no está online o `1`: la cámara está online)
+- `link` (tipo de enlace)
+- `prov` (proveedor)
+- `brand`, `model`, `enc_brand`, `enc_model` (marca y modelo de la cámara y el codificador de video)
 
-**Params**:
+**Respuesta**: Objeto [`CameraGroup`](#tipos-de-typescript).
 
-- `/:id`: ID de la medida
+## `GET /api/data/camera/:id`
 
-**Response**:
+**Descripción**: Obtiene una cámara específica por ID.
 
-- [`Speed`](#tipos-de-typescript)
+**Parámetros de consulta**:
 
-## `USE /camera`
+- `token` (requerido)
 
-### `GET /`
+**Parámetros de URL**:
 
-Obtener un conjunto de cámaras
+- `id`: ID de la cámara
 
-**Queries**:
-
-- `?token`: Token
-- `?min_int`: Fecha de integración mínima
-- `?max_int`: Fecha de integración máxima
-- `?min_lat`: Latitud mínima
-- `?max_lat`: Latitud máxima
-- `?min_lng`: Longitud mínima
-- `?max_lng`: Longitud máxima
-- `?state`: Región
-- `?city`: Ciudad
-- `?online`: Estado de la cámara (`0` o `1`)
-- `?link`: Tipo de enlace
-- `?prov`: Proveedor
-- `?brand`: Marca de la cámara
-- `?model`: Modelo de la cámara
-- `?enc_brand`: Marca del codificador de video
-- `?enc_model`: Modelo del codificador de video
-
-**Response**:
-
-- [`CameraGroup`](#tipos-de-typescript)
-
-### `GET /:id`
-
-Obtener una cámara en específico
-
-**Queries**:
-
-- `?token`: Token
-
-**Params**:
-
-- `/:id`: ID de la medida
-
-**Response**:
-
-- [`Camera`](#tipos-de-typescript)
+**Respuesta**: Objeto [`Camera`](#tipos-de-typescript) individual.
 
 # Anexos
 
 ## Modelo Entidad Relación
 
-[preview](https://mermaid.live/edit#pako:eNqtWFFv2zYQ_isCnzYgCezGlhK9ea27Be2aIgv6UBgwGIm22UikRlNZ3MT_fRQpKhRFppEtv8TmHY93R9539-UJJDRFIAaIfcBwzWC-IIH4bDnkKHhSP6rP1Zfb-Z_zmwCnwQJ8_RTMrhbgRfptdvP-r9nNb-9GvwcE5khJ9guiviSY7441Zu6T3i3F7o-frJO2KOGUDeb4ljOE-AHmplOf71UunK5zhu9KArOjT2sswgwxvuS7Ag1tc1veDWLW3FgZdCZGHZliJu4WU9L_0PHolVASWG4HzA-jpXialWBom4cl3BP7f_AnWkq7bzf5YXY7v736ex6kovpelj9-vp7dBhu8FYWHkyXHrstdMZqbl2vKKvd8Mk5tiTouQ2TNN_aq--wfMF9m6AFlPd6cSnlBMelR_VqqNrv9hhzzMu2kL6NkbQmas0iKHl1P9-ib80FSC2pVpfvEsnrcod7n9soKExeYS8j2PoAaFW35H9fXn-ezL0FC8yJDIt0MFZTxrgJncLUS7xKTBKeI8CNuRAkYyjC8w5lI2tteZYoyuOtGJgDNF_RLdTofJyY_SrZTb_oARBAgY5SDbbXIYHIAzgijcqfTaP8S-reEhLcyrCUKtT2Jk3H5hNK_VzpM32b_Jo-UUU_Dh8k9JuvlimYpYoNhe09YN27Q3ZiVe84QHtAGJ9kBh4XyuZhg9ItJ7Ij275vtCoTSgbpfbxCRh3fx8dFeKkTUeCvC7ofazg6khfWl-cRNpjs4RgvPzCJAOG9BqwfjmtzfMUjSwW4yFxTmoLHZ9-Kle07HM0zuh53ECkYf8EHlf-4hW2KJwQPqf_RWytIqBzEhIcEb2w9GN19KMmfPl2n0wXSdEFtuPgIVo9BwixGpWC1rybV5-Vh8Z-uNTqVepW5QyIpJPz-fnj4_KSIcN_zVYMe1Qt2DYp1zE6r2lcqzttEodLhebarN1GI967ponLmjcq-Z-bpEyVLV85-bqVnKCg3-6UbdWGvHVJN52zs9L1q02VIzBkeLzbfzoxPeNGqXrkGXYs1lfqknuYtjwKjvUTuqxwdzsq_N1dOTqeOYAG1lPQQ5xjpbVY9EDvbqiqhmah1W6ozefEEmnarDbynrftUhp9altgbjFty9Whz2pFVbbS5UDzjm_KQLUpae7aGeeyyll87aHVssVVULZjesFVQzi5seZLY4jSIq5LjBstd0bEjrdjJ7Rw3OVnuytQyYBidgzcSfmLMSnQChkMPqJ5A9aAH4Bom2AmLxNYXsvmo-e7GngOQ7pbneJjK83oB4BbOt-FUW1ZxV_0-yUUGCC7P3tCQcxBcXk4k0AuIn8Aji03B0Np1EF5eTcTiJJtE4PAE7sTwOz8_C6TSaXoajy2g8mkb7E_BTHjw-m46jyzB8F40mkzCKovP9_5fxGAk)
+El diagrama completo del modelo de base de datos está disponible en formato Mermaid:
+
+[Ver modelo ER](https://mermaid.live/edit#pako:eNq9WFtzmzoQ_iuMnnpmkgy-xubNp3XbTC_ppJnzcMYzHgVkWw1IVBZpnMT_vUJCGIQgwaHlxQZ9Wq12V7vf6hH4NEDAA4i9w3DNYLQgjni2HHLkPKqX9Ln4ej3_ML9ycOAswLdPzuxiAQ6j_82u3n6cXb3pu_84BEZIjewXRP3xMd-9VlhxntRuKWe__6Sn5qttkc8p60z5LWcI8SPEjUZ1-qf2qFWfM3yTEBi-esVcIgwR40u-i1HXMrfJTSdiixNTgbXGUcsGmAkfY0raL9xzG7bjw2TboY0YTUSYpgNdyzzO6DV7_wUf0FLKfbnI_CQy3_RV-rybXc-vL77MnUAc1MPn958vZ9fOBm_F-cT-kmOb_1eMRjaZejzdQdM4p7ZRtXSIyJpvzK92PX7AaBmiOxS2DFHloZhiwtvbU02u1x9yzJOgYtKQkrUxkK9HAnRvi_Y_7eymZFeSqnJIE0Sey3qr3EbmlxUmtrIhC0Nj7GS514b59_Ly83z21fFpFIdIeImhmDJeBXAGVysR3pj4OECEv8KJaoChEMMbHApDviygAxTCXXV3Im02bf6QB2pjG5MfCdupY3FE_hEprXCiTKlxCP0jspoQKmdahbYP8p8JJLxkaT2iakSDAeXemgBSz2dqW1u68WLtlOAG2gH9W0zWyxUNA8Q6qy4tC0vBq3Z6oNSr3cYd2mA_PGLBsQyjYgJ7hhe-goTUMc0YoeDv1ODWOUjqVk2z9-anWBgFb4VV2heC2tqnAZlvmyC5UyopkcY1JEvk86iUpRvSZe6qGwZJ0JnjI9GDHcX36w6JVK9W-RCT224pZMzoHT4qawxqOkbxicHOzkKeVdw2LVnpFAk6h0R_XI4tXfIpCa2MQ1q6qSBkdmvSOY0ZZQ6Bsg8jknbxrDSul5Cx1aSDnlwLbJUxDsmMJszvsPFRZ-Tp6fT06VGHh5fvrgljbrCkXwY-cB8vi6FiSt6noCd1jeHpUClelOglFUBfTxQuPzJAVtwNGYX-PMOVu2tPNxy21rs4I107Z9PVxtaAalZt76wNsEqG36tbyqWVrKKuYEzdNP82LjoMWIGE21wlYYaXlFnLxtOmznmPDVvofT3deT6Lkx2mhbNlYaL3oRlZsefKxGXk1MSU6LUJ1ezSwplNqOaZlWsI226yfrpyvWDdeTG0io1utvUSWNfzyi2D4e9S31FK_w3nzqSrmczclZolFkmoPoTyTJv6aeJogA6cw2R9BlAdEEvWUNFbDlhFHzIJKmt5edE2i7SZz7KiYlReE1UoLTablrUCJ2DNxI_HWYJOgABGMH0FMn0vAN8gkZCBJ_4GkN2meXsv5sSQ_E9ppKcJg643wFvBcCvekjglntmtcg5BROj0liaEA2_QG_WlEOA9gnvgnY56_bNBbzLuTc8nw36vNzoBO_F5Oj4bTIbjgTsdT8-H7nC4PwEPct3B2ei857ruoD8Zu5PpaDrY_wZyUZSX)
 
 ```mermaid
 erDiagram
@@ -627,7 +606,7 @@ erDiagram
     city {
         INTEGER id "PK AI"
         VARCHAR(20) name
-        INTEGER state_id FK
+        INTEGER state_id "FK"
     }
 
     sector {
@@ -638,7 +617,7 @@ erDiagram
     street {
         INTEGER id "PK AI"
         VARCHAR(255) name
-        INTEGER city_id FK
+        INTEGER city_id "FK"
     }
 
     tribunal {
@@ -654,7 +633,7 @@ erDiagram
     alert_subtype {
         INTEGER id "PK AI"
         VARCHAR(255) name
-        INTEGER type_id FK
+        INTEGER type_id "FK"
     }
 
     alert_direction {
@@ -679,20 +658,21 @@ erDiagram
 
     waze_route {
         INTEGER id "PK AI"
+        INTEGER src_id "FK"
         DATETIME date
         FLOAT historic_time
-        INTEGER from_id FK
-        INTEGER name_id FK
-        INTEGER to_id FK
+        INTEGER from_id "FK"
+        INTEGER name_id "FK"
+        INTEGER to_id "FK"
         FLOAT length
         FLOAT time
         INTEGER jam_level
-        INTEGER type_id FK
+        INTEGER type_id "FK"
     }
 
     route_point {
         INTEGER id "PK AI"
-        INTEGER route_id FK
+        INTEGER route_id "FK"
         FLOAT latitude
         FLOAT longitude
         INTEGER index
@@ -700,14 +680,15 @@ erDiagram
 
     alert {
         INTEGER id "PK AI"
+        INTEGER src_id "FK"
         DATETIME date
-        INTEGER city_id FK
-        INTEGER subtype_id FK
-        INTEGER cause_id FK
+        INTEGER city_id "FK"
+        INTEGER subtype_id "FK"
+        INTEGER cause_id "FK"
         FLOAT km
         FLOAT fine
-        INTEGER sector_id FK
-        INTEGER tribunal_id FK
+        INTEGER sector_id "FK"
+        INTEGER tribunal_id "FK"
         BOOLEAN complete_report
         BOOLEAN traffic_incident
         FLOAT latitude
@@ -715,8 +696,8 @@ erDiagram
         FLOAT reliability
         FLOAT length
         FLOAT delay
-        INTEGER dir_id FK
-        INTEGER waze_route_id FK
+        INTEGER dir_id "FK"
+        INTEGER waze_route_id "FK"
     }
 
     injury_level {
@@ -732,15 +713,15 @@ erDiagram
     injury {
         INTEGER id "PK AI"
         INTEGER quantity
-        INTEGER alert_id FK
-        INTEGER level_id FK
-        INTEGER place_id FK
+        INTEGER alert_id "FK"
+        INTEGER level_id "FK"
+        INTEGER place_id "FK"
     }
 
     alert_street {
         INTEGER id "PK AI"
-        INTEGER alert_id FK
-        INTEGER street_id FK
+        INTEGER alert_id "FK"
+        INTEGER street_id "FK"
     }
 
     tracking_folder {
@@ -751,7 +732,7 @@ erDiagram
     route {
         INTEGER id "PK AI"
         VARCHAR(5) name
-        INTEGER folder_id FK
+        INTEGER folder_id "FK"
     }
 
     vehicle {
@@ -767,19 +748,20 @@ erDiagram
 
     speed {
         INTEGER id "PK AI"
+        INTEGER src_id "FK"
         DATETIME date
         FLOAT latitude
         FLOAT longitude
         FLOAT speed
         FLOAT fix
         FLOAT precision
-        INTEGER city_id FK
-        INTEGER route_id FK
-        INTEGER vehicle_id FK
+        INTEGER city_id "FK"
+        INTEGER route_id "FK"
+        INTEGER vehicle_id "FK"
         INTEGER direction
         FLOAT dop
         VARCHAR(255) comment
-        INTEGER dir_id FK
+        INTEGER dir_id "FK"
     }
 
     brand {
@@ -790,7 +772,7 @@ erDiagram
     model {
         INTEGER id "PK AI"
         VARCHAR(25) name
-        INTEGER brand_id FK
+        INTEGER brand_id "FK"
     }
 
     link_type {
@@ -805,62 +787,66 @@ erDiagram
 
     camera {
         INTEGER id "PK AI"
+        INTEGER src_id "FK"
         VARCHAR(50) name
-        INTEGER city_id FK
+        INTEGER city_id "FK"
         DATETIME integration
         BOOLEAN online
-        INTEGER link_id FK
-        INTEGER provider_id FK
+        INTEGER link_id "FK"
+        INTEGER provider_id "FK"
         VARCHAR(20) camera_id
         VARCHAR(20) encoder_id
-        INTEGER model_id FK
-        INTEGER encoder_model_id FK
+        INTEGER model_id "FK"
+        INTEGER encoder_model_id "FK"
         FLOAT latitude
         FLOAT longitude
     }
 
+    source {
+        INTEGER id "PK AI"
+        VARCHAR(255) name
+    }
+
+    model ||--|{ camera : model_id
+    model ||--|{ camera : encoder_model_id
+    source ||--|{ waze_route: src_id
+    speed }|--|| city : city_id
     state ||--|{ city : state_id
     city ||--|{ street : city_id
-    speed }|--|| city : city_id
-
     alert_type ||--|{ alert_subtype : type_id
     alert_subtype ||--|{ alert : subtype_id
     alert_cause ||--|{ alert : cause_id
     alert_direction ||--|{ alert : dir_idS
     city ||--|{ alert : city_id
-
     sector ||--|{ alert : sector_id
     tribunal ||--|{ alert : tribunal_id
-
+    source ||--|{ alert: src_id
     street ||--|{ alert_street : street_id
     street ||--|{ waze_route : from_id
     street ||--|{ waze_route : to_id
     alert_street }|--|| alert : alert_id
     alert ||--|{ injury : alert_id
-
     injury_level ||--|{ injury : level_id
     injury_place ||--|{ injury : place_id
-
     route_name ||--|{ waze_route : name_id
     route_type ||--|{ waze_route : type_id
     route_point }|--|| waze_route : route_id
     waze_route ||--|{ alert : waze_route_id
     camera }|--|| city : city_id
-
     tracking_folder ||--|{ route : folder_id
     route ||--|{ speed : route_id
     vehicle ||--|{ speed : vehicle_id
-
     direction ||--|{ speed : dir_id
+    speed }|--|| source: src_id
     brand ||--|{ model : brand_id
-    model ||--|{ camera : model_id
-    model ||--|{ camera : encoder_model_id
-
     link_type ||--|{ camera : link_id
     provider ||--|{ camera : provider_id
+    camera }|--|| source: src_id
 ```
 
 ## Estructura de la API
+
+Diagrama de flujo de los endpoints disponibles:
 
 [preview](https://mermaid.live/edit#pako:eNptkD1vwyAURf-K9YZOTgw2BpuhS1t16VR1ap2BhhfbavwhjNUP5P9enMRNI4WJA-dexHOw7TSChN2--9xWytjg6bloA7_e1YAuUn0daWXVFKxWt8eLcUDiItONFqfgZkbqvT0ae8LYRUOPqE-YuGirGjRqOufntqBES8jb48NLEG28OiM9oqz15k-mi0wvZXpNjhc5vpTja3KyyMmlnPyTIYTS1BqkNSOG4P_RqBnBzTUF2AobLED6rVbmo4CinXymV-1r1zVLzE-rrEDu1H7wNPZ-pHhfq9Kos4KtRnPXja0FmWUsO5SAdPAFcsXJOmUiyxnlTDBBeQjf_pjyZM3TVKQ5J7mgJBVTCD-Hh-k6pSLnPBaEMS6ESKZfi86RHw)
 
@@ -875,6 +861,12 @@ flowchart LR
 ```
 
 ## Tipos de Typescript
+
+Interfaces completas para los objetos devueltos por la API, incluyendo:
+
+- `WazeRoute`, `Alert`, `Speed`, `Camera`
+- Estructuras de agrupación: `WazeRouteGroup`, `AlertGroup`, etc.
+- Estadísticas y categorías
 
 ```typescript
 export interface IdName {
@@ -902,6 +894,7 @@ export interface WazePoint extends Position {
 
 export interface WazeRoute {
   id: number;
+  source: IdName;
   date: Date;
   historicTime: number;
   from: Street;
@@ -925,6 +918,7 @@ export interface Injury {
 
 export interface Alert extends Partial<Position> {
   id: number;
+  source: IdName;
   date: Date;
   city?: City;
   subtype?: AlertSubtype;
@@ -953,6 +947,7 @@ export interface Vehicle extends IdName {
 
 export interface Speed extends Position {
   id: number;
+  source: IdName;
   date: Date;
   speed: number;
   fix?: number;
@@ -971,6 +966,7 @@ export interface Model extends IdName {
 }
 
 export interface Camera extends IdName, Position {
+  source: IdName;
   city: City;
   integration: Date;
   online: boolean;
@@ -984,19 +980,20 @@ export interface Camera extends IdName, Position {
 
 export interface Stats<T> {
   count: number;
+  min: T;
   mean: T;
   logMean: T;
   median: T;
+  max: T;
   stdDev: T;
   logStdDev: T;
-  min: T;
-  max: T;
   NAs: number;
 }
 
 export interface CatStats<T> {
   total: number;
-  categories: [T | undefined, number][];
+  categories: [T, number][];
+  NAs: number;
 }
 
 export interface PositionGroup {
@@ -1004,7 +1001,8 @@ export interface PositionGroup {
   longitude: Stats<number>;
 }
 
-export interface WazeRouteGroup {
+export interface WazeRouteGroup extends PositionGroup {
+  source: CatStats<IdName>;
   date: Stats<Date>;
   historicTime: Stats<number>;
   from: CatStats<Street>;
@@ -1014,10 +1012,12 @@ export interface WazeRouteGroup {
   time: Stats<number>;
   jamLevel: Stats<number>;
   type: CatStats<IdName>;
-  wazeRoutes: WazeRoute[];
+  discretizedWazeRoutes?: Omit<WazeRouteGroup, "discretizedWazeRoutes">[];
+  wazeRoutes?: WazeRoute[];
 }
 
-export interface AlertGroup extends Partial<PositionGroup> {
+export interface AlertGroup extends PositionGroup {
+  source: CatStats<IdName>;
   date: Stats<Date>;
   city: CatStats<City>;
   state: CatStats<IdName>;
@@ -1034,10 +1034,12 @@ export interface AlertGroup extends Partial<PositionGroup> {
   length: Stats<number>;
   delay: Stats<number>;
   dir: CatStats<IdName>;
-  alerts: Alert[];
+  discretizedAlerts?: Omit<AlertGroup, "discretizedAlerts">[];
+  alerts?: Alert[];
 }
 
 export interface SpeedGroup extends PositionGroup {
+  source: CatStats<IdName>;
   date: Stats<Date>;
   speed: Stats<number>;
   fix: Stats<number>;
@@ -1050,10 +1052,12 @@ export interface SpeedGroup extends PositionGroup {
   direction: CatStats<number>;
   dop: Stats<number>;
   dir: CatStats<IdName>;
-  speeds: Speed[];
+  discretizedSpeeds?: Omit<SpeedGroup, "discretizedSpeeds">[];
+  speeds?: Speed[];
 }
 
 export interface CameraGroup extends PositionGroup {
+  source: CatStats<IdName>;
   city: CatStats<City>;
   state: CatStats<IdName>;
   integration: Stats<Date>;
@@ -1067,3 +1071,294 @@ export interface CameraGroup extends PositionGroup {
   cameras: Camera[];
 }
 ```
+
+## Visualización de tipos
+
+Diagrama de clases interactivo que muestra las relaciones entre interfaces:
+
+[Ver diagrama de clases](https://mermaid.ai/play?utm_medium=toggle&utm_source=mermaid_live_editor#pako:eNqtWF1v3CoQ_StoH6-6f6CKuupNpKtIN23URO1DkgfWZje0Nqwwmyb98G-_YMMwAzi3avqS2OcMA8wMc_B-XzW6FavXq6bjw3Am-d7w_lYxNr2z8_Yd7wX77hHG1LHfCsNkO78O1ki13zDlTDzy81alkZd6kFZqlY3tuJX22AoKarUHlHg5lfYpeghrGSy3peGVNULYaDoNa9yfwu4T_yYutVR2YU_xVbXisTr4gz7apYDEFeqjacIOz9xiWRtWDAPu5WC1kc217AMR1r8zuie-YmzBwmoaOqH29p5AFpwG4DPv_xUPoiOO7dMhWEFIbu7Ywf8fio2_7YSxV8etH5SlI_oh9ufq89HkieuKNRw63oj6ZL8dYZ_6DeSekaVv2DA_YGfOmB8HErEN-9LT951U2aBBNC6FFHPnYXtUPGxyq3UnuHL-dX_ohBUfxEEbm5HW8N1ONueqka1Qlk5rRCf5Vnawm0iUad-wVnT8iS6olSbleKrcDfsaH4PplCqXeukfpCiTTyo-JGCnu1aYwvSjuJdNB8Zzg_Bprp3YgxDtSw_S4J3kqXqkwMGIRg6uFdULJITFpJCEXWzYw_yQhVk6fxbcAawPtCu6rPeQ0LChkA8ShwvXf7ssvFvDVVs2Q0cZnrdDFCPS9kLI3HkWrqenBYfKY1p1WVEzB3yhB9ToBxkSDelseH-eKYBQXkVMhOct9f4vAsDsIhJZB-d2GK9HWhGNPsYYXrNeKnh0W4jPnd5foNdetDK9DbY9Ew_I9IoAPSfVwt69HSpxt_XFWW3jYb-5fhXQO3eWGhf5va6epqiL_7iCO8Rczu7n8WOmkRm3KJVwxIlnWPuc0ZHUy8z4MhnR0aITllIFLmdFGpFoFbMl-SpGRSHL9ocaG2Us0kqMU3V730s70lC8YrerVg6NEVZ-Ey2Qw-1qvLnzB7rG0bbp7b4SspSsl8YdhvhjPKJzXPqy5SCscyPVuWL8MxTSQhrmqIgUTbpYLhIJZLkCopRAh940ViWztKpqJ11goaC_Wm5ITYvVg6xO1ZaSn1XaRFSqLODpeuJ5DmCpkn_2RCPNzJP5WINz_XxRmU4HaMRqWwxLdwtEBk0eqSYDDVmj4pyRUaL_J6Ep5llCJ6KS0IDPU_pnz0OYKxr-6wn9rWjjKij0vzxG-CZQuE13goKitwOgJ3kfsfwXI-F-Uw7L7wiV0cHkb-zER3USXv-Aoh4Hs_X6LwZOCTq7LeCPqdAIDndngp6GxBAQ9-SCnHXQw_RKsF7rOYEldfJjvcYVtGCR6nfBgOrjglFqa95gXrcu508EnTbh5WyJo5Pgw-HDcArZLBkLMULim1PZnSinUXOdoh5PbIY_M9n0ujDTJ_yhFe7u6_WPNxBsj89X5QnGdZiMK6iug1Dd8NNLyuNrdsmNlbzCw-d_SUFApg8LXUUgAskGCjv8ZEGKwOPzFyXxF78cCRi-Qjw2f6ZmIHGKcHCQfu0pzeefKMgW0u87BA6ep5DUpsuxyRC1DwzHPoGGZ1BKGuocyHyBmhMGoSe_2KDdeO7kxIuC2fFGvMEFRnFcpZSJC6ZompvipL5KCoJHqXyX2ZqhGiqjSnhhDpSibCuxfigMBywLB3SpPCChZ-TmdoEhTfiZaC3wtJdWdjRxq5__Aa-KheI)
+
+```mermaid
+classDiagram
+  class IdName {
+    number id
+    string? name
+  }
+
+  class Position {
+    number latitude
+    number longitude
+  }
+
+  class City {
+    IdName state
+  }
+
+  class Street {
+    City city
+  }
+
+  class WazePoint {
+    number id
+    number index
+  }
+
+  class WazeRoute {
+    number id
+    IdName source
+    Date date
+    number historicTime
+    Street from
+    IdName name
+    Street to
+    number length
+    number time
+    number jamLevel
+    IdName type
+    WazePoint[] points
+  }
+
+  class AlertSubtype {
+    IdName type
+  }
+
+  class Injury {
+    IdName level
+    IdName place
+  }
+
+  class Alert {
+    number id
+    IdName source
+    Date date
+    City? city
+    AlertSubtype? subtype
+    IdName? cause
+    number? km
+    number? fine
+    IdName? sector
+    IdName? tribunal
+    boolean? completeReport
+    boolean? trafficIncident
+    number? reliability
+    number? length
+    number? delay
+    IdName? dir
+    WazeRoute? wazeRoute
+    Injury[] injuries
+  }
+
+  class Route {
+    IdName folder
+  }
+
+  class Vehicle {
+    string plate
+  }
+
+  class Speed {
+    number id
+    IdName source
+    Date date
+    number speed
+    number? fix
+    number? precision
+    City? city
+    Route? route
+    Vehicle? vehicle
+    number? direction
+    number? dop
+    string? comment
+    IdName dir
+  }
+
+  class Model {
+    IdName brand
+  }
+
+  class Camera {
+    IdName source
+    City city
+    Date integration
+    boolean online
+    IdName link
+    IdName provider
+    string camId
+    string? encoderId
+    Model model
+    Model? encoderModel
+  }
+
+  class Stats~T~{
+    number count
+    T min
+    T mean
+    T logMean
+    T median
+    T stdDev
+    T logStdDev
+    T max
+    number NAs
+  }
+
+  class CatStats~T~{
+    number total
+    [T, number][] categories
+  }
+
+  class PositionGroup {
+    Stats~number~ latitude
+    Stats~number~ longitude
+  }
+
+  class WazeRouteGroup {
+    CatStats~IdName~ source
+    Stats~Date~ date
+    Stats~number~ historicTime
+    CatStats~Street~ from
+    CatStats~IdName~ name
+    CatStats~Street~ to
+    Stats~number~ length
+    Stats~number~ time
+    Stats~number~ jamLevel
+    Omit~WazeRouteGroup, "discretizedWazeRoutes"~[]? discretizedWazeRoutes
+    WazeRoute[]? wazeRoutes
+  }
+
+  class AlertGroup {
+    CatStats~IdName~ source
+    Stats~Date~ date
+    CatStats~City~ city
+    CatStats~IdName~ state
+    CatStats~AlertSubtype~ subtype
+    CatStats~IdName~ type
+    CatStats~IdName~ cause
+    Stats~number~ km
+    Stats~number~ fine
+    CatStats~IdName~ sector
+    CatStats~IdName~ tribunal
+    CatStats~boolean~ completeReport
+    CatStats~boolean~ trafficIncident
+    Stats~number~ reliability
+    Stats~number~ length
+    Stats~number~ delay
+    CatStats~IdName~ dir
+    Omit~AlertGroup, "discretizedAlerts"~[]? discretizedAlerts
+    Alert[]? alerts
+  }
+
+  class SpeedGroup {
+    CatStats~IdName~ source
+    Stats~Date~ date
+    Stats~number~ speed
+    Stats~number~ fix
+    Stats~number~ precision
+    CatStats~City~ city
+    CatStats~IdName~ state
+    CatStats~Route~ route
+    CatStats~IdName~ folder
+    CatStats~Vehicle~ vehicle
+    CatStats~number~ direction
+    Stats~number~ dop
+    CatStats~IdName~ dir
+    Omit~SpeedGroup, "discretizedSpeeds"~[]? discretizedSpeeds
+    Speed[]? speed
+  }
+
+  class CameraGroup {
+    CatStats~IdName~ source
+    CatStats~City~ city
+    CatStats~IdName~ state
+    Stats~Date~ integration
+    CatStats~boolean~ online
+    CatStats~IdName~ link
+    CatStats~IdName~ provider
+    CatStats~Model~ model
+    CatStats~IdName~ brand
+    CatStats~Model~ encoderModel
+    CatStats~IdName~ encoderBrand
+    Camera[] camera
+  }
+
+  CatStats --* Model
+  CatStats --* IdName
+  CatStats --* Vehicle
+  CatStats --* Route
+  CatStats --* City
+  CatStats --* AlertSubtype
+  CatStats --* Street
+  PositionGroup --o Stats
+  PositionGroup <|-- CameraGroup
+  PositionGroup <|-- SpeedGroup
+  PositionGroup <|-- WazeRouteGroup
+  PositionGroup <|-- AlertGroup
+  Stats o-- CameraGroup
+  Stats o-- SpeedGroup
+  Stats o-- WazeRouteGroup
+  Stats o-- AlertGroup
+  CameraGroup --o Camera
+  CameraGroup --o CatStats
+  AlertGroup --o CatStats
+  WazeRouteGroup --o CatStats
+  SpeedGroup --o Speed
+  SpeedGroup --o CatStats
+  AlertGroup --o Alert
+  WazeRouteGroup --o WazeRoute
+  Camera --|> Position
+  Model --|> IdName
+  Camera --|> IdName
+  Camera --o IdName
+  Camera --o Model
+  Position <|-- Alert: Partial
+  Position <|-- WazePoint
+  Position <|-- Speed
+  City o-- Speed
+  City o-- Alert
+  City o-- Street
+  Street o-- WazeRoute
+  Route o-- Speed
+  Vehicle o-- Speed
+  IdName o-- Injury
+  IdName o-- WazeRoute
+  IdName o-- Speed
+  WazePoint o-- WazeRoute
+  Injury o-- Alert
+  WazeRoute o-- Alert
+  IdName <|-- Route
+  IdName o-- Route
+  IdName <|-- Vehicle
+  IdName <|-- City
+  IdName o-- City
+  IdName <|-- AlertSubtype
+  IdName o-- AlertSubtype
+  IdName <|-- Street
+  AlertSubtype o-- Alert
+
+  <<interface>> IdName
+  <<interface>> Position
+  <<interface>> City
+  <<interface>> Street
+  <<interface>> WazePoint
+  <<interface>> WazeRoute
+  <<interface>> AlertSubtype
+  <<interface>> Injury
+  <<interface>> Alert
+  <<interface>> Route
+  <<interface>> Vehicle
+  <<interface>> Speed
+  <<interface>> Model
+  <<interface>> Camera
+  <<interface>> Stats
+  <<interface>> CatStats
+  <<interface>> PositionGroup
+  <<interface>> WazeRouteGroup
+  <<interface>> AlertGroup
+  <<interface>> SpeedGroup
+```
+
+# Notas Finales
+
+- Todas las consultas requieren autenticación mediante `token`.
+- Los filtros son opcionales y permiten refinamiento por fecha, ubicación, tipo de dato y otros atributos.
+- Las respuestas incluyen metadatos estadísticos y estructuras discretizadas para análisis espaciotemporales.
+- La API sigue un diseño RESTful y devuelve JSON en todas las respuestas.
