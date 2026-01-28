@@ -17,6 +17,13 @@ A continuación se presentan las tablas que componen la base de datos, indicando
 
 El Modelo Entidad Relación se encuentra en los [anexos](#modelo-entidad-relación).
 
+## token
+
+**Columnas**:
+
+- `id`: `INTEGER`, `PRIMARY KEY`, `AUTOINCREMENT`
+- `token`: `BLOB(16)`, `UNIQUE`
+
 ## source
 
 **Fuente(s)**:
@@ -37,6 +44,29 @@ El Modelo Entidad Relación se encuentra en los [anexos](#modelo-entidad-relaci�
 
 - `id`: `INTEGER`, `PRIMARY KEY`, `AUTOINCREMENT`
 - `name`: `VARCHAR(255)`
+
+## permission
+
+**Columnas**:
+
+- `id`: `INTEGER`, `PRIMARY KEY`, `AUTOINCREMENT`
+- `name`: `VARCHAR(255)`
+
+## token_source
+
+**Columnas**:
+
+- `id`: `INTEGER`, `PRIMARY KEY`, `AUTOINCREMENT`
+- `tkn_id`: `INTEGER`, `FOREIGN KEY` (`id` - [token](#token))
+- `src_id`: `INTEGER`, `FOREIGN KEY` (`id` - [source](#source))
+
+## token_permission
+
+**Columnas**:
+
+- `id`: `INTEGER`, `PRIMARY KEY`, `AUTOINCREMENT`
+- `tkn_id`: `INTEGER`, `FOREIGN KEY` (`id` - [token](#token))
+- `prm_id`: `INTEGER`, `FOREIGN KEY` (`id` - [permission](#permission))
 
 ## state
 
@@ -594,10 +624,37 @@ La API está organizada en cuatro recursos principales: rutas, alertas, velocida
 
 El diagrama completo del modelo de base de datos está disponible en formato Mermaid:
 
-[Ver modelo ER](https://mermaid.live/edit#pako:eNq9WFtzmzoQ_iuMnnpmkgy-xubNp3XbTC_ppJnzcMYzHgVkWw1IVBZpnMT_vUJCGIQgwaHlxQZ9Wq12V7vf6hH4NEDAA4i9w3DNYLQgjni2HHLkPKqX9Ln4ej3_ML9ycOAswLdPzuxiAQ6j_82u3n6cXb3pu_84BEZIjewXRP3xMd-9VlhxntRuKWe__6Sn5qttkc8p60z5LWcI8SPEjUZ1-qf2qFWfM3yTEBi-esVcIgwR40u-i1HXMrfJTSdiixNTgbXGUcsGmAkfY0raL9xzG7bjw2TboY0YTUSYpgNdyzzO6DV7_wUf0FLKfbnI_CQy3_RV-rybXc-vL77MnUAc1MPn958vZ9fOBm_F-cT-kmOb_1eMRjaZejzdQdM4p7ZRtXSIyJpvzK92PX7AaBmiOxS2DFHloZhiwtvbU02u1x9yzJOgYtKQkrUxkK9HAnRvi_Y_7eymZFeSqnJIE0Sey3qr3EbmlxUmtrIhC0Nj7GS514b59_Ly83z21fFpFIdIeImhmDJeBXAGVysR3pj4OECEv8KJaoChEMMbHApDviygAxTCXXV3Im02bf6QB2pjG5MfCdupY3FE_hEprXCiTKlxCP0jspoQKmdahbYP8p8JJLxkaT2iakSDAeXemgBSz2dqW1u68WLtlOAG2gH9W0zWyxUNA8Q6qy4tC0vBq3Z6oNSr3cYd2mA_PGLBsQyjYgJ7hhe-goTUMc0YoeDv1ODWOUjqVk2z9-anWBgFb4VV2heC2tqnAZlvmyC5UyopkcY1JEvk86iUpRvSZe6qGwZJ0JnjI9GDHcX36w6JVK9W-RCT224pZMzoHT4qawxqOkbxicHOzkKeVdw2LVnpFAk6h0R_XI4tXfIpCa2MQ1q6qSBkdmvSOY0ZZQ6Bsg8jknbxrDSul5Cx1aSDnlwLbJUxDsmMJszvsPFRZ-Tp6fT06VGHh5fvrgljbrCkXwY-cB8vi6FiSt6noCd1jeHpUClelOglFUBfTxQuPzJAVtwNGYX-PMOVu2tPNxy21rs4I107Z9PVxtaAalZt76wNsEqG36tbyqWVrKKuYEzdNP82LjoMWIGE21wlYYaXlFnLxtOmznmPDVvofT3deT6Lkx2mhbNlYaL3oRlZsefKxGXk1MSU6LUJ1ezSwplNqOaZlWsI226yfrpyvWDdeTG0io1utvUSWNfzyi2D4e9S31FK_w3nzqSrmczclZolFkmoPoTyTJv6aeJogA6cw2R9BlAdEEvWUNFbDlhFHzIJKmt5edE2i7SZz7KiYlReE1UoLTablrUCJ2DNxI_HWYJOgABGMH0FMn0vAN8gkZCBJ_4GkN2meXsv5sSQ_E9ppKcJg643wFvBcCvekjglntmtcg5BROj0liaEA2_QG_WlEOA9gnvgnY56_bNBbzLuTc8nw36vNzoBO_F5Oj4bTIbjgTsdT8-H7nC4PwEPct3B2ei857ruoD8Zu5PpaDrY_wZyUZSX)
+[Ver modelo ER](https://mermaid.live/edit#pako:eNq9Wd1T4zYQ_1cyfrqbgRsSJyH4LdzlWubo0aFMHzqZyQhbCbrYkivLlBzkf6-sD0eWZYOD27yQSKvVfmn3t8uzF5IIeoEH6RcENhQkSzzgH0a2EA-e5Y_ic_X9bvHL4naAosHS-_3bYH619A67l9c3lx-G04_ynFzfL9WXjOQ0hG9n9uf89vOv89sPo8nk4wCDBFr8UkgTlGWI4P54CrlXXSXVu2yLV4Li6zfXdkZDe9u6-BiV3nh5SpPGyzMG2DGOOXPaMERs915mFbMV0jXLDkNGaG_CZ4xCyN4dUObBwh7NfqfoPscg7i-EQQwpW7FdCvvmmeX3vbCtRC1n2GgceW2EKPfxUc98eNaiTgjyrEcbUZLzMC02-uZ5nNEbdP8H_IQrwbd7inEksOLzZX63uLv6bTGI-EM9LH-9vpnfDR5Qxt8nClcMufy_piRpS1uFBm37jLh25dUxxBv2YK-65fgBklUMH2HcMUSlh1KCMOtuT3m4WX7AEMujmkljgjfWRnkfjuCTK9r_a2e3JbsKV5lD2kjEu2y2yjaxV9YIu8qGKAytsaNyr4vm8ubmejH_PghJksaQe4nClFBWJ2AUrNc8vBEOUQQxe4cT5QaFMQL3KOaGfFtARzAGu7p2PG22KX_IA42xjfCPnO7kszgi__CUZrwom2sag2PAIGcqTjqZdg_yv3OAWcXSekfWiBYDCt1aEVch5yu1rSvceLN0knEL7ADhFuHNak3iCNLeqkvHwmJ41Q0PpHiNajzCBxTGR1w4FWFkJrBXcOE7QEgT0kwhjP6fGtw5BwnZ6mn2yV5KuVFQ0a50LwSNtU8TKN-2kZROqaVEkjaALJ7Pk0qWbkmXpavuKcBRb45PeKd9FN5veiRCvEbhY4S3_ULIlJJHdFTW8Bs6Rr5EQW9vocwqZ11assor4nAObiioxpYu-QTHTsQhLN3agku7tclcxIw0B6dyb0NczGpoZV9fIWKrTQZ9uJGwU8awYvrl5fT05Vm7MyilaaOxBarMihTxAasEyudmCt0XRC9y7BBo15qDDX2lJNDjBGNYoQhUMbZ4GP20oqt2w4FuEFytsnmiuLtEv_VG1CLVKNjdCVvEMnn9UVep5FaxihyZ2LJpvGwNJiwyAzS7XCXILC9Js1aNp01d4hQXrdGrBrpTfJVOdIQOjKXCROuhEZTZIyl2CkzaNBU4bJNqNOjAuDapxoW1sYFLG9X_1sYBTs3N0DIbU6V6hVjX39pUwPJ3pU-opOuWd2fDS8WzdKVGdSZo1I9QvGlbPg30LKIDRrBRmkUoH4gja8jorQasLPeKg8xaQVlk7aJq5zNVBKxKaVMZpcBlU5dUchSvGJlz6kCNfh0T7NfYmQNnRSvWqywNosr1h_VAjZe9E29D-Z-A0RyeeFylBBQ_PVHalx57gLwcewH_GgG6LerOnp9JAf6LkEQf467fPHjBGsQZ_5WnBaRV_5UoSSDm1vtMcsy8YHgxmwgmXvDsPXnB6Wg4_jS9GA2nI394MZ7MTrwdXx3y1dn5ZOyP_enYP7sY-_sT76e4d_Rp6I_PZ5Ph-cQf-ePZ1N__CyklP5o)
 
 ```mermaid
 erDiagram
+    token {
+        INTEGER id "PK AI"
+        BLOB(16) token
+    }
+
+    source {
+        INTEGER id "PK AI"
+        VARCHAR(255) name
+    }
+
+    permission {
+        INTEGER id "PK AI"
+        VARCHAR(255) name
+    }
+
+    token_source {
+        INTEGER id "PK AI"
+        INTEGER tkn_id "FK"
+        INTEGER src_id "FK"
+    }
+
+    token_permission {
+        INTEGER id "PK AI"
+        INTEGER tkn_id "FK"
+        INTEGER prm_id "FK"
+    }
+
     state {
         INTEGER id "PK AI"
         VARCHAR(20) name
@@ -802,11 +859,6 @@ erDiagram
         FLOAT longitude
     }
 
-    source {
-        INTEGER id "PK AI"
-        VARCHAR(255) name
-    }
-
     model ||--|{ camera : model_id
     model ||--|{ camera : encoder_model_id
     source ||--|{ waze_route: src_id
@@ -842,22 +894,111 @@ erDiagram
     link_type ||--|{ camera : link_id
     provider ||--|{ camera : provider_id
     camera }|--|| source: src_id
+    token ||--|{ token_source: tkn_id
+    token_source }|--|| source: src_id
+    token_permission }|--|| token: tkn_id
+    permission ||--|{ token_permission: prm_id
 ```
 
 ## Estructura de la API
 
 Diagrama de flujo de los endpoints disponibles:
 
-[preview](https://mermaid.live/edit#pako:eNptkD1vwyAURf-K9YZOTgw2BpuhS1t16VR1ap2BhhfbavwhjNUP5P9enMRNI4WJA-dexHOw7TSChN2--9xWytjg6bloA7_e1YAuUn0daWXVFKxWt8eLcUDiItONFqfgZkbqvT0ae8LYRUOPqE-YuGirGjRqOufntqBES8jb48NLEG28OiM9oqz15k-mi0wvZXpNjhc5vpTja3KyyMmlnPyTIYTS1BqkNSOG4P_RqBnBzTUF2AobLED6rVbmo4CinXymV-1r1zVLzE-rrEDu1H7wNPZ-pHhfq9Kos4KtRnPXja0FmWUsO5SAdPAFcsXJOmUiyxnlTDBBeQjf_pjyZM3TVKQ5J7mgJBVTCD-Hh-k6pSLnPBaEMS6ESKZfi86RHw)
+[Ver el diagrama de los endpoints](https://mermaid.live/edit#pako:eNrNVV1r2zAU_StGD2OFfEnK4tjQwmhH37fCYE0Iiq0kIrakyXKX1OS_V_KXlC4Z7GnLk47vOVf33nPtVCARKQUx2GTiV7IjSgdPDwsemN-aFLQaE8nGKdHkFAyHd02gLOikGitRanoKPlgIDS-jSrcQVeNCUpq2EFfjhORUkZPT22zBlurJ5Pnxy1MwXhqqhbCBMUuXPRl2ZHhOhpfIqCOjczK6RMYdGZ-T8W_kutRgODL0nyVVR1P38wJosae8IRQqaQ454yszMNoicvCRiWVEu5ADNsK3XqQDKSuSVSETD2maywVYLoPb27tA0UJOJh-fv5NX-tV68mickcsbVzf064au7rMM0MvgiaHfNPznTTe36j53wvSxOemjbJ8V5doBe8U-dzf0Z_N8w7hXsEMFTbRQbVrF1iUnWXudyGVGNV0pKoXSHYVsNixZMZ6wlHKvN0Uzl98B23U3wbrrHtgp-poepEyd2QWN4Z_tG_febOibDa-YDWGr9oTINxr9H0ZbWSFTJ3Ogtu_gu3dwEWmadCGHLi7ORmQpbd2uv2nN8WW3clsks15onDDrwYRvmZDeOMT5q4mMU9_sx_C9U8h3Cl1xCsFW7Qmx7xT-o1OMe24wfzX_1qeLoxM8618ac9q3w1Lipf0HUYR3hol-lylPVl7EwibqN47N2O7rP433c8P-3PCVuWHYyZc3YAC2iqUg1qqkA2Ae5sRCUNmcRr2jOV2A2BxTovYLsOAno5GE_xAi72Smiu0OxBuSFQaV0q79AyNbRRyFcrNJ96LkGsRoEs3rJCCuwAHEEM1GeBrBT1GEZ1MUQTQARxAPw_loOpuGEUYhnqIwRKcBeK3vhSM4xXgWzmYRxtE8nIenN92QY-g)
 
 ```mermaid
-flowchart LR
+flowchart TD
     base{/api/data} -->
     use0{/route} & use1{/alert} & use2{/speed} & use3{/camera}
     use0 --> get00[GET /] & get01[GET /:id]
     use1 --> get10[GET /] & get11[GET /:id]
     use2 --> get20[GET /] & get21[GET /:id]
     use3 --> get30[GET /] & get31[GET /:id]
+    get00 -.-> query00[["token
+    src
+    min_date
+    max_date
+    min_lat
+    max_lat
+    min_lng
+    max_lng
+    disc_spc
+    disc_temp"]] ==> resp00([WazeRouteGroup])
+    get01 -.-> query01[["token"]] ==> resp01([WazeRoute])
+    get10 -.-> query10[["token
+    src
+    min_date
+    max_date
+    min_lat
+    max_lat
+    min_lng
+    max_lng
+    disc_spc
+    disc_temp
+    state
+    city
+    type
+    subtype
+    min_km
+    max_km
+    min_fine
+    max_fine
+    sector
+    tribunal
+    complete_report
+    traffic_incident
+    min_rel
+    max_rel
+    min_len
+    max_len
+    min_del
+    max_del
+    dir"]] ==> resp10([AlertGroup])
+    get11 -.-> query11[["token"]] ==> resp11([Alert])
+    get20 -.-> query20[["token
+    src
+    min_date
+    max_date
+    min_lat
+    max_lat
+    min_lng
+    max_lng
+    disc_spc
+    disc_temp
+    min_spd
+    max_spd
+    min_fix
+    max_fix
+    min_pres
+    max_pres
+    state
+    city
+    folder
+    route
+    vh_type
+    plate
+    direction
+    min_dop
+    max_dop"]] ==> resp20([SpeedGroup])
+    get21 -.-> query21[["token"]] ==> resp21([Speed])
+    get30 -.-> query30[["token
+    src
+    min_int
+    max_int
+    min_lat
+    max_lat
+    min_lng
+    max_lng
+    state
+    city
+    online
+    link
+    prov
+    brand
+    model
+    enc_brand
+    enc_model"]] ==> resp30([CameraGroup])
+    get31 -.-> query31[["token"]] ==> resp31([Camera])
 ```
 
 ## Tipos de Typescript
